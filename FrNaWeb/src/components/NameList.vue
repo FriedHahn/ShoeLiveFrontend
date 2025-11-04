@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const people = ["Anna", "Ben", "Cara"]
+const people = ["Friedrich", "Nam", "Test"]
 </script>
 
 <template>
