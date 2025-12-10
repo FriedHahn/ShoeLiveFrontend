@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
-import NameList from '@/components/NameList.vue';
+
 </script>
 
 <template>
   <main>
-    <TheWelcome />
-    <NameList />
+    <h1>Home</h1>
+    <p>Du bist eingeloggt.</p>
   </main>
 </template>
