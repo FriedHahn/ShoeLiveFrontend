@@ -9,10 +9,10 @@ const password = ref("")
 const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 const errorMessage = ref("")
 
-async function login() {
+async function register() {
   errorMessage.value = ""
 
-  const res = await fetch(`${backendBaseUrl}/api/login`, {
+  const res = await fetch(`${backendBaseUrl}/api/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: email.value, password: password.value })
@@ -24,7 +24,7 @@ async function login() {
     setLoginState(data.token, email.value)
     router.push({ name: "home" })
   } else {
-    errorMessage.value = data.message || "Login fehlgeschlagen"
+    errorMessage.value = data.message || "Registrierung fehlgeschlagen"
   }
 }
 </script>
@@ -38,54 +38,41 @@ async function login() {
         </div>
         <div class="login-headlines">
           <h1>ShoeLive</h1>
-          <h2>Zugang zu deinem Profil</h2>
+          <h2>Neuen Account erstellen</h2>
         </div>
         <p class="login-text">
-          Melde dich an, um Zugriff auf dein Dashboard und deine Daten zu erhalten.
+          Registriere dich mit E-Mail und Passwort. Danach bist du direkt eingeloggt.
         </p>
       </div>
 
-
       <div class="login-right">
         <div class="login-form-header">
-          <h3>Anmelden</h3>
-          <p>Bitte Zugangsdaten eingeben</p>
+          <h3>Registrieren</h3>
+          <p>Bitte Daten eingeben</p>
         </div>
 
         <div class="login-form">
           <label class="login-label">
             E-Mail
-            <input
-              v-model="email"
-              type="email"
-              class="login-input"
-              placeholder="dein@mail.de"
-            />
+            <input v-model="email" type="email" class="login-input" placeholder="dein@mail.de" />
           </label>
 
           <label class="login-label">
             Passwort
-            <input
-              v-model="password"
-              type="password"
-              class="login-input"
-              placeholder="••••••••"
-            />
+            <input v-model="password" type="password" class="login-input" placeholder="mindestens 4 Zeichen" />
           </label>
 
           <p v-if="errorMessage" class="login-error">
             {{ errorMessage }}
           </p>
 
-          <button class="login-button" @click="login">
-            Einloggen
+          <button class="login-button" @click="register">
+            Registrieren
           </button>
-          <div class="register-hint">
-            <span>Noch keinen Account?</span>
-            <RouterLink to="/register" class="register-link">
-              Registrieren
-            </RouterLink>
-          </div>
+
+          <button class="back-button" @click="router.push({ name: 'login' })">
+            Zurück zum Login
+          </button>
         </div>
       </div>
     </div>
@@ -93,6 +80,7 @@ async function login() {
 </template>
 
 <style scoped>
+
 .login-page {
   min-height: 100vh;
   padding: 40px;
@@ -130,9 +118,6 @@ async function login() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
-  font-size: 24px;
-  color: #ffffff;
   box-shadow: 0 12px 30px rgba(79, 70, 229, 0.5);
 }
 
@@ -232,29 +217,19 @@ async function login() {
   box-shadow: 0 18px 40px rgba(79, 70, 229, 0.7);
 }
 
+.back-button {
+  padding: 12px;
+  border-radius: 14px;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 700;
+}
+
 .logo-image {
   width: 120px;
   height: 120px;
   object-fit: contain;
 }
-
-.register-hint {
-  margin-top: 16px;
-  font-size: 14px;
-  color: #6b7280;
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-}
-
-.register-link {
-  font-weight: 600;
-  color: #4f46e5;
-  text-decoration: none;
-}
-
-.register-link:hover {
-  text-decoration: underline;
-}
-
 </style>

@@ -9,12 +9,12 @@ import { RouterLink } from "vue-router"
       <p class="home-subtitle">Wähle, was du machen möchtest.</p>
 
       <div class="home-actions">
-        <RouterLink :to="{ name: 'create-ad' }" class="home-box">
+        <RouterLink :to="{ name: 'create-ad' }" class="home-box home-box-action">
           <h2>Anzeige erstellen</h2>
           <p>Neue Schuhanzeige anlegen.</p>
         </RouterLink>
 
-        <RouterLink :to="{ name: 'ads' }" class="home-box">
+        <RouterLink :to="{ name: 'ads' }" class="home-box home-box-action">
           <h2>Alle Anzeigen</h2>
           <p>Alle gespeicherten Anzeigen ansehen.</p>
         </RouterLink>
@@ -38,21 +38,23 @@ import { RouterLink } from "vue-router"
   max-width: 1100px;
   width: 100%;
   background: #ffffff;
-  border-radius: 24px;
-  padding: 32px 40px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  border-radius: 26px;
+  padding: 36px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
 }
 
 .home-title {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 800;
+  margin: 0 0 8px 0;
+  font-size: 44px;
+  font-weight: 900;
   color: #111827;
 }
 
 .home-subtitle {
-  margin: 6px 0 24px;
+  margin: 0 0 28px 0;
+  font-size: 16px;
   color: #6b7280;
+  font-weight: 600;
 }
 
 .home-actions {
@@ -62,30 +64,34 @@ import { RouterLink } from "vue-router"
 
 .home-box {
   flex: 1;
-  background: #f9fafb;
   border-radius: 18px;
-  padding: 20px 24px;
+  padding: 22px 24px;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.home-box h2 {
-  margin: 0 0 8px;
+.home-box-action {
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  color: #ffffff;
+  box-shadow: 0 14px 35px rgba(79, 70, 229, 0.45);
+}
+
+.home-box-action h2 {
+  margin: 0 0 8px 0;
   font-size: 20px;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
+  color: #ffffff;
 }
 
-.home-box p {
+.home-box-action p {
   margin: 0;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
 }
 
-.home-box:hover {
+.home-box-action:hover {
   transform: translateY(-2px);
-  background: #ffffff;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.60);
 }
 </style>

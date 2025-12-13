@@ -1,15 +1,32 @@
-import { ref } from "vue"
+import { ref, computed } from "vue"
 
-export const isLoggedIn = ref(!!localStorage.getItem("loggedIn"))
+const token = ref<string | null>(localStorage.getItem("token"))
+const email = ref<string | null>(localStorage.getItem("email"))
 
-export function login(token: string) {
+export const isLoggedIn = computed(() => !!token.value)
+
+export function login(newToken: string, userEmail: string) {
+  token.value = newToken
+  email.value = userEmail
+
+  localStorage.setItem("token", newToken)
+  localStorage.setItem("email", userEmail)
   localStorage.setItem("loggedIn", "true")
-  localStorage.setItem("token", token)
-  isLoggedIn.value = true
 }
 
 export function logout() {
-  localStorage.removeItem("loggedIn")
+  token.value = null
+  email.value = null
+
   localStorage.removeItem("token")
-  isLoggedIn.value = false
+  localStorage.removeItem("email")
+  localStorage.removeItem("loggedIn")
+}
+
+export function getAuthToken() {
+  return token.value
+}
+
+export function getUserEmail() {
+  return email.value
 }
