@@ -85,7 +85,7 @@ onMounted(loadProfile)
       <header class="header">
         <div>
           <h1 class="headline">Profil</h1>
-          <p class="subtext">Uebersicht ueber dein Konto</p>
+          <p class="subtext">Übersicht über dein Konto</p>
         </div>
 
         <button class="ghost-button" type="button" @click="loadProfile" :disabled="isLoading">
@@ -117,7 +117,7 @@ onMounted(loadProfile)
 
       <section class="card">
         <h2 class="section-title">Verkaufte Anzeigen</h2>
-        <p v-if="soldAds.length === 0" class="empty-text">Noch keine Verkaeufe.</p>
+        <p v-if="soldAds.length === 0" class="empty-text">Noch keine Verkäufe.</p>
 
         <div v-else class="list">
           <article v-for="a in soldAds" :key="a.id" class="item">
@@ -132,7 +132,7 @@ onMounted(loadProfile)
 
       <section class="card">
         <h2 class="section-title">Gekaufte Anzeigen</h2>
-        <p v-if="boughtAds.length === 0" class="empty-text">Noch keine Kaeufe.</p>
+        <p v-if="boughtAds.length === 0" class="empty-text">Noch keine Käufe.</p>
 
         <div v-else class="list">
           <article v-for="a in boughtAds" :key="a.id" class="item">

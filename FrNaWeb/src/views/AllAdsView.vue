@@ -223,6 +223,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <p style="color:#111; font-weight:800;">
+    DEBUG adsCount: {{ ads.length }}
+  </p>
+  <pre style="color:#111; background:#fff; padding:12px; border-radius:12px; overflow:auto;">
+{{ ads }}
+</pre>
+
   <div class="ads-page">
     <div class="ads-inner">
       <header class="ads-header">
