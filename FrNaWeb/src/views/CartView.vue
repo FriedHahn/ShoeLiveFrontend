@@ -70,7 +70,7 @@ async function checkout() {
       <header class="header">
         <div>
           <h1 class="headline">Warenkorb</h1>
-          <p class="subtext">Hier kannst du den Kauf bestaetigen.</p>
+          <p class="subtext">Hier kannst du deinen Kauf bestätigen.</p>
         </div>
       </header>
 

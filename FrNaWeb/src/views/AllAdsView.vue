@@ -18,12 +18,11 @@ const ads = ref<Ad[]>([])
 const errorMessage = ref("")
 const isLoading = ref(false)
 
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+const backendBaseUrl = (import.meta.env.VITE_BACKEND_BASE_URL || "").replace(/\/+$/, "")
 const myEmail = computed(() => (getUserEmail() || "").toLowerCase())
 
 const openMenuId = ref<number | null>(null)
 
-/* Edit Modal */
 const isEditOpen = ref(false)
 const editId = ref<number | null>(null)
 const editBrand = ref("")
@@ -32,7 +31,6 @@ const editPrice = ref<number | null>(null)
 const editError = ref("")
 const isSavingEdit = ref(false)
 
-/* Bild Edit */
 const editRemoveImage = ref(false)
 const editImageFile = ref<File | null>(null)
 
@@ -45,8 +43,13 @@ const myAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").toLowerC
 const otherAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").toLowerCase() !== myEmail.value))
 
 function getImageSrc(ad: Ad) {
-  if (ad.imagePath && ad.imagePath.trim()) return backendBaseUrl + ad.imagePath
-  return KeinBild
+  const p = (ad.imagePath || "").trim()
+  if (!p) return KeinBild
+
+  if (p.startsWith("http://") || p.startsWith("https://")) return p
+
+  const path = p.startsWith("/") ? p : `/${p}`
+  return `${backendBaseUrl}${path}`
 }
 
 async function loadAds() {
