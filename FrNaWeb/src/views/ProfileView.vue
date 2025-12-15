@@ -103,13 +103,13 @@ onMounted(loadProfile)
 
       <section class="stats">
         <div class="stat-card">
-          <p class="stat-label">Verkaeufe</p>
+          <p class="stat-label">Verkäufe</p>
           <p class="stat-value">{{ soldCount }}</p>
           <p class="stat-sub">Einnahmen: {{ revenueTotal }} €</p>
         </div>
 
         <div class="stat-card">
-          <p class="stat-label">Kaeufe</p>
+          <p class="stat-label">Käufe</p>
           <p class="stat-value">{{ boughtCount }}</p>
           <p class="stat-sub">Ausgaben: {{ spentTotal }} €</p>
         </div>
@@ -124,7 +124,7 @@ onMounted(loadProfile)
             <img v-if="a.imagePath" :src="backendBaseUrl + a.imagePath" class="img" alt="Bild" />
             <div class="meta">
               <p class="title">{{ a.brand }}</p>
-              <p class="small">Groesse {{ a.size }} · {{ a.price }} €</p>
+              <p class="small">Größe {{ a.size }} · {{ a.price }} €</p>
             </div>
           </article>
         </div>
@@ -139,7 +139,7 @@ onMounted(loadProfile)
             <img v-if="a.imagePath" :src="backendBaseUrl + a.imagePath" class="img" alt="Bild" />
             <div class="meta">
               <p class="title">{{ a.brand }}</p>
-              <p class="small">Groesse {{ a.size }} · {{ a.price }} €</p>
+              <p class="small">Größe {{ a.size }} · {{ a.price }} €</p>
             </div>
           </article>
         </div>

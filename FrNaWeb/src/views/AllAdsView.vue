@@ -52,6 +52,39 @@ function getImageSrc(ad: Ad) {
   return `${backendBaseUrl}${path}`
 }
 
+/* ---------- extra Einblendung statt alert ---------- */
+const infoBox = ref<{ text: string; secondsLeft: number } | null>(null)
+let infoTimer: number | null = null
+
+function showInfoBox(text: string, duration = 7) {
+  if (infoTimer) {
+    clearInterval(infoTimer)
+    infoTimer = null
+  }
+
+  infoBox.value = { text, secondsLeft: duration }
+
+  infoTimer = window.setInterval(() => {
+    if (!infoBox.value) return
+    infoBox.value.secondsLeft--
+
+    if (infoBox.value.secondsLeft <= 0) {
+      clearInterval(infoTimer!)
+      infoTimer = null
+      infoBox.value = null
+    }
+  }, 1000)
+}
+
+function hideInfoBox() {
+  if (infoTimer) {
+    clearInterval(infoTimer)
+    infoTimer = null
+  }
+  infoBox.value = null
+}
+/* -------------------------------------------------- */
+
 async function loadAds() {
   errorMessage.value = ""
   isLoading.value = true
@@ -164,6 +197,7 @@ async function saveEdit() {
 
     closeEdit()
     await loadAds()
+    showInfoBox("Änderungen gespeichert.")
   } catch {
     editError.value = "Server nicht erreichbar."
   } finally {
@@ -197,6 +231,7 @@ async function deleteAd(ad: Ad) {
     }
 
     await loadAds()
+    showInfoBox("Anzeige wurde gelöscht.")
   } catch {
     errorMessage.value = "Server nicht erreichbar."
   }
@@ -211,7 +246,7 @@ function buy(ad: Ad) {
     ownerEmail: ad.ownerEmail,
     imagePath: ad.imagePath ?? null
   })
-  alert("In den Warenkorb gelegt.")
+  showInfoBox("In den Warenkorb gelegt.")
 }
 
 function closeMenu() {
@@ -225,6 +260,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("click", closeMenu)
+  hideInfoBox()
 })
 </script>
 
@@ -246,6 +282,12 @@ onBeforeUnmount(() => {
           <RouterLink :to="{ name: 'create-ad' }" class="primary-button">Anzeige erstellen</RouterLink>
         </div>
       </header>
+
+      <!-- extra Einblendung (kein Toast, Teil der Seite) -->
+      <div v-if="infoBox" class="info-box">
+        <span>{{ infoBox.text }}</span>
+        <span class="countdown">{{ infoBox.secondsLeft }}s</span>
+      </div>
 
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
       <p v-else-if="ads.length === 0" class="empty-text">Es wurden noch keine Anzeigen erstellt.</p>
@@ -370,6 +412,25 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
+/* extra Einblendung statt alert */
+.info-box {
+  margin: 14px 0 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #ecfeff;
+  color: #0f172a;
+  font-weight: 750;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid #67e8f9;
+}
+.countdown {
+  font-size: 13px;
+  font-weight: 850;
+  color: #0369a1;
+}
+
 .ads-header {
   display: flex;
   justify-content: space-between;
@@ -435,6 +496,7 @@ onBeforeUnmount(() => {
   background: #ffffff;
   color: #111827;
   font-weight: 800;
+  font-size: 14px;
   font-size: 14px;
   text-decoration: none;
 }
