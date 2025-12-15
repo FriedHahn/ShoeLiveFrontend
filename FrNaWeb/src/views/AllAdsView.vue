@@ -25,29 +25,9 @@ const myEmail = computed(() => (getUserEmail() || "").trim().toLowerCase())
 
 const openMenuId = ref<number | null>(null)
 
-const isEditOpen = ref(false)
-const editId = ref<number | null>(null)
-const editBrand = ref("")
-const editSize = ref<number | null>(null)
-const editPrice = ref<number | null>(null)
-const editError = ref("")
-const isSavingEdit = ref(false)
-
-const editRemoveImage = ref(false)
-const editImageFile = ref<File | null>(null)
-
-function onEditImageChange(e: Event) {
-  const input = e.target as HTMLInputElement | null
-  editImageFile.value = input?.files?.[0] ?? null
-}
-
-/* ---- Cart state (for disabling "Kaufen") ---- */
-const cartIds = computed(() => new Set(getCartItems().map(i => i.id)))
-function isInCart(adId: number) {
-  return cartIds.value.has(adId)
-}
-
-/* ---- Toast (bottom-right, with progress bar) ---- */
+/* =========================
+   Toast (unten rechts, weiß, Balken)
+========================= */
 type ToastKind = "success" | "info" | "error"
 const toastVisible = ref(false)
 const toastMessage = ref("")
@@ -81,9 +61,7 @@ function showToast(msg: string, kind: ToastKind = "success", durationMs = 6500) 
     const elapsed = now - start
     const left = Math.max(0, 1 - elapsed / durationMs)
     toastProgress.value = Math.round(left * 100)
-    if (left > 0) {
-      toastRaf = requestAnimationFrame(tick)
-    }
+    if (left > 0) toastRaf = requestAnimationFrame(tick)
   }
   toastRaf = requestAnimationFrame(tick)
 
@@ -98,18 +76,93 @@ function closeToast() {
   clearToastTimers()
 }
 
-/* ---- Lists ---- */
-const myAds = computed(() =>
-  ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value)
-)
-const otherAds = computed(() =>
-  ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value)
-)
+/* =========================
+   Delete Confirm Modal
+========================= */
+const isDeleteOpen = ref(false)
+const deleteTarget = ref<Ad | null>(null)
+const isDeleting = ref(false)
+
+function openDelete(ad: Ad) {
+  if (!canEdit(ad)) return
+  openMenuId.value = null
+  deleteTarget.value = ad
+  isDeleteOpen.value = true
+}
+
+function closeDelete() {
+  isDeleteOpen.value = false
+  deleteTarget.value = null
+}
+
+async function confirmDelete() {
+  if (!deleteTarget.value) return
+
+  const token = getAuthToken()
+  if (!token) {
+    showToast("Nicht eingeloggt.", "error")
+    return
+  }
+
+  isDeleting.value = true
+  try {
+    const res = await fetch(`${backendBaseUrl}/api/ads/${deleteTarget.value.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    if (!res.ok && res.status !== 204) {
+      const msg = await res.text()
+      showToast(msg || "Löschen fehlgeschlagen.", "error")
+      return
+    }
+
+    showToast("Anzeige gelöscht.", "success")
+    closeDelete()
+    await loadAds()
+  } catch {
+    showToast("Server nicht erreichbar.", "error")
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+/* =========================
+   Edit Modal (wie bei dir)
+========================= */
+const isEditOpen = ref(false)
+const editId = ref<number | null>(null)
+const editBrand = ref("")
+const editSize = ref<number | null>(null)
+const editPrice = ref<number | null>(null)
+const editError = ref("")
+const isSavingEdit = ref(false)
+
+const editRemoveImage = ref(false)
+const editImageFile = ref<File | null>(null)
+
+function onEditImageChange(e: Event) {
+  const input = e.target as HTMLInputElement | null
+  editImageFile.value = input?.files?.[0] ?? null
+}
+
+const myAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value))
+const otherAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value))
+
+/* =========================
+   Cart helper
+========================= */
+const cartIds = computed(() => new Set(getCartItems().map(i => i.id)))
+function isInCart(adId: number) {
+  return cartIds.value.has(adId)
+}
 
 function getImageSrc(ad: Ad) {
   const p = (ad.imagePath || "").trim()
   if (!p) return KeinBild
+
   if (p.startsWith("http://") || p.startsWith("https://")) return p
+
   const path = p.startsWith("/") ? p : `/${p}`
   return `${backendBaseUrl}${path}`
 }
@@ -142,7 +195,7 @@ function toggleMenu(id: number) {
 }
 
 function canEdit(ad: Ad) {
-  return (ad.ownerEmail || "").toLowerCase() === myEmail.value
+  return (ad.ownerEmail || "").trim().toLowerCase() === myEmail.value
 }
 
 function openEdit(ad: Ad) {
@@ -234,40 +287,9 @@ async function saveEdit() {
   }
 }
 
-async function deleteAd(ad: Ad) {
-  if (!canEdit(ad)) return
-  openMenuId.value = null
-
-  const ok = confirm("Anzeige wirklich löschen?")
-  if (!ok) return
-
-  const token = getAuthToken()
-  if (!token) {
-    errorMessage.value = "Nicht eingeloggt."
-    return
-  }
-
-  try {
-    const res = await fetch(`${backendBaseUrl}/api/ads/${ad.id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
-    })
-
-    if (!res.ok && res.status !== 204) {
-      const msg = await res.text()
-      errorMessage.value = msg || "Löschen fehlgeschlagen."
-      showToast(errorMessage.value, "error")
-      return
-    }
-
-    await loadAds()
-    showToast("Anzeige gelöscht.", "success")
-  } catch {
-    errorMessage.value = "Server nicht erreichbar."
-    showToast(errorMessage.value, "error")
-  }
-}
-
+/* =========================
+   Buy
+========================= */
 function buy(ad: Ad) {
   if (ad.sold) {
     showToast("Diese Anzeige ist bereits verkauft.", "info")
@@ -350,7 +372,7 @@ onBeforeUnmount(() => {
 
                 <div v-if="openMenuId === ad.id" class="dots-menu">
                   <button type="button" class="menu-item" @click="openEdit(ad)">Bearbeiten</button>
-                  <button type="button" class="menu-item danger" @click="deleteAd(ad)">Löschen</button>
+                  <button type="button" class="menu-item danger" @click="openDelete(ad)">Löschen</button>
                 </div>
               </div>
             </article>
@@ -393,6 +415,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <!-- Edit Modal -->
     <div v-if="isEditOpen" class="edit-backdrop" @click="closeEdit">
       <div class="edit-modal" @click.stop>
         <h2 class="edit-title">Anzeige bearbeiten</h2>
@@ -435,9 +458,24 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Toast bottom-right (outside the white box) -->
+    <!-- Delete Confirm Modal -->
+    <div v-if="isDeleteOpen" class="confirm-backdrop" @click="closeDelete">
+      <div class="confirm-modal" @click.stop>
+        <h2 class="confirm-title">Anzeige löschen?</h2>
+        <p class="confirm-text">Willst du diese Anzeige wirklich löschen? Das kann nicht rückgängig gemacht werden.</p>
+
+        <div class="confirm-actions">
+          <button class="ghost-button" type="button" @click="closeDelete" :disabled="isDeleting">Abbrechen</button>
+          <button class="danger-button" type="button" @click="confirmDelete" :disabled="isDeleting">
+            {{ isDeleting ? "Lösche..." : "Löschen" }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast per Teleport direkt in body -->
     <teleport to="body">
-      <div class="toast-host" aria-live="polite">
+      <div class="toast-host" aria-live="polite" aria-atomic="true">
         <div v-if="toastVisible" class="toast" :class="toastKind">
           <div class="toast-top">
             <div class="toast-text">{{ toastMessage }}</div>
@@ -449,7 +487,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </teleport>
-
   </div>
 </template>
 
@@ -461,7 +498,6 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);
   display: block;
-  position: relative;
 }
 
 .ads-inner {
@@ -524,7 +560,7 @@ onBeforeUnmount(() => {
 .primary-button.disabled,
 .primary-button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
   box-shadow: none;
   background: #9ca3af;
 }
@@ -766,6 +802,61 @@ onBeforeUnmount(() => {
   margin-top: 4px;
 }
 
+/* Confirm Modal */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 30000;
+}
+
+.confirm-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
+}
+
+.confirm-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.confirm-text {
+  margin: 0;
+  color: #6b7280;
+  font-weight: 650;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.danger-button {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 14px;
+}
+</style>
+
+<style>
+/* Toast global (wegen Teleport) */
 .toast-host {
   position: fixed;
   right: 18px;
@@ -777,24 +868,24 @@ onBeforeUnmount(() => {
 .toast {
   pointer-events: auto;
   width: 320px;
+  background: #ffffff;
+  color: #111827;
   border-radius: 18px;
-  background: rgba(17, 24, 39, 0.92);
-  color: #ffffff;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 24, 39, 0.10);
 }
 
 .toast.success {
-  border-color: rgba(79, 70, 229, 0.55);
+  border-color: rgba(79, 70, 229, 0.35);
 }
 
 .toast.info {
-  border-color: rgba(124, 58, 237, 0.55);
+  border-color: rgba(124, 58, 237, 0.35);
 }
 
 .toast.error {
-  border-color: rgba(236, 72, 153, 0.55);
+  border-color: rgba(220, 38, 38, 0.35);
 }
 
 .toast-top {
@@ -802,22 +893,23 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 14px 10px;
+  padding: 12px 12px 10px;
 }
 
 .toast-text {
-  font-weight: 800;
+  font-weight: 850;
   font-size: 14px;
   line-height: 1.35;
+  color: #111827;
 }
 
 .toast-x {
   width: 34px;
   height: 34px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.10);
+  background: rgba(17, 24, 39, 0.04);
+  color: #111827;
   cursor: pointer;
   font-weight: 900;
   line-height: 1;
@@ -825,7 +917,7 @@ onBeforeUnmount(() => {
 
 .toast-bar {
   height: 4px;
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(17, 24, 39, 0.08);
 }
 
 .toast-bar-fill {
