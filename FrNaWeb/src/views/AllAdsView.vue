@@ -61,7 +61,8 @@ async function loadAds() {
       errorMessage.value = `Anzeigen konnten nicht geladen werden (Status ${res.status}).`
       return
     }
-    ads.value = await res.json()
+    const data = await res.json()
+    ads.value = Array.isArray(data) ? data : (data ? [data] : [])
   } catch {
     errorMessage.value = "Server nicht erreichbar."
   } finally {
