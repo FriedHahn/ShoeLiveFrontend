@@ -103,7 +103,7 @@ async function checkout() {
 
           <label class="confirm">
             <input type="checkbox" v-model="confirmBuy" />
-            Ich moechte diese Artikel kaufen.
+            Ich möchte diese Artikel kaufen.
           </label>
 
           <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>

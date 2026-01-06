@@ -25,7 +25,7 @@ const notifOpen = ref(false)
 const isLoadingNotif = ref(false)
 let intervalId: number | null = null
 
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+const backendBaseUrl = (import.meta.env.VITE_BACKEND_BASE_URL || "").replace(/\/+$/, "")
 
 async function fetchNotifications() {
   const token = getAuthToken()
@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
     <div class="topbar-inner">
       <RouterLink to="/home" class="brand">
         <img src="@/assets/logo.png" class="logo" alt="Logo" />
-        <div>
+        <div class="brand-text">
           <div class="name">ShoeLive</div>
           <div class="by">by Friedrich & Nam</div>
         </div>
@@ -95,12 +95,12 @@ onBeforeUnmount(() => {
         <RouterLink to="/ads" class="nav-link">Alle Anzeigen</RouterLink>
         <RouterLink to="/profile" class="nav-link">Profil</RouterLink>
 
-        <RouterLink to="/cart" class="icon-btn" title="Warenkorb">
+        <RouterLink to="/cart" class="icon-btn" title="Warenkorb" aria-label="Warenkorb">
           🛒
           <span v-if="cartCount > 0" class="badge">{{ cartCount }}</span>
         </RouterLink>
 
-        <button class="icon-btn" type="button" title="Benachrichtigungen" @click.stop="toggleNotif">
+        <button class="icon-btn" type="button" title="Benachrichtigungen" aria-label="Benachrichtigungen" @click.stop="toggleNotif">
           🔔
           <span v-if="notifications.length > 0" class="badge">{{ notifications.length }}</span>
 
@@ -135,18 +135,25 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* FIX: Topbar bleibt oben sichtbar */
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30000;
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 0 #000;
 }
 
+/* Layout breit */
 .topbar-inner {
   max-width: 1100px;
-  margin: auto;
+  margin: 0 auto;
   padding: 14px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 14px;
 }
 
 .brand {
@@ -155,27 +162,37 @@ onBeforeUnmount(() => {
   align-items: center;
   text-decoration: none;
   color: #111827;
+  min-width: 0;
 }
 
 .logo {
   width: 52px;
+  height: auto;
+}
+
+.brand-text {
+  min-width: 0;
 }
 
 .name {
   font-size: 22px;
   font-weight: 900;
+  line-height: 1.1;
 }
 
 .by {
   font-size: 12px;
   color: #6b7280;
   font-weight: 700;
+  line-height: 1.1;
 }
 
 .nav {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap; /* wichtig für schmale Fenster */
+  justify-content: flex-end;
 }
 
 .nav-link {
@@ -184,6 +201,7 @@ onBeforeUnmount(() => {
   color: #111827;
   padding: 8px 12px;
   border-radius: 10px;
+  white-space: nowrap;
 }
 
 .nav-link.router-link-active {
@@ -197,6 +215,7 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   padding: 8px 10px;
   cursor: pointer;
+  line-height: 1;
 }
 
 .badge {
@@ -218,8 +237,10 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   font-weight: 900;
   cursor: pointer;
+  white-space: nowrap;
 }
 
+/* Popup */
 .popup {
   position: absolute;
   right: 0;
@@ -229,6 +250,7 @@ onBeforeUnmount(() => {
   border-radius: 14px;
   padding: 12px;
   width: 320px;
+  max-width: min(320px, calc(100vw - 24px)); /* mobile safe */
   box-shadow: 0 16px 40px rgba(0,0,0,0.14);
   z-index: 9999;
 }
@@ -297,5 +319,52 @@ onBeforeUnmount(() => {
   background: linear-gradient(90deg, #4f46e5, #7c3aed);
   box-shadow: 0 10px 22px rgba(79,70,229,0.45);
   white-space: nowrap;
+}
+
+/* RESPONSIVE: schmal/Handy */
+@media (max-width: 820px) {
+  .topbar-inner {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .nav {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .popup {
+    right: 0;
+    left: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .logo {
+    width: 44px;
+  }
+
+  .name {
+    font-size: 18px;
+  }
+
+  .nav-link {
+    padding: 8px 10px;
+  }
+
+  .logout {
+    padding: 8px 12px;
+  }
+
+  .popup {
+    right: 0;
+    width: 100%;
+    max-width: calc(100vw - 24px);
+  }
 }
 </style>

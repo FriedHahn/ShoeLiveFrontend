@@ -25,9 +25,6 @@ const myEmail = computed(() => (getUserEmail() || "").trim().toLowerCase())
 
 const openMenuId = ref<number | null>(null)
 
-/* =========================
-   Toast (unten rechts, weiß, Balken)
-========================= */
 type ToastKind = "success" | "info" | "error"
 const toastVisible = ref(false)
 const toastMessage = ref("")
@@ -76,9 +73,6 @@ function closeToast() {
   clearToastTimers()
 }
 
-/* =========================
-   Delete Confirm Modal
-========================= */
 const isDeleteOpen = ref(false)
 const deleteTarget = ref<Ad | null>(null)
 const isDeleting = ref(false)
@@ -127,9 +121,6 @@ async function confirmDelete() {
   }
 }
 
-/* =========================
-   Edit Modal (wie bei dir)
-========================= */
 const isEditOpen = ref(false)
 const editId = ref<number | null>(null)
 const editBrand = ref("")
@@ -149,9 +140,7 @@ function onEditImageChange(e: Event) {
 const myAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value))
 const otherAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value))
 
-/* =========================
-   Cart helper
-========================= */
+
 const cartIds = computed(() => new Set(getCartItems().map(i => i.id)))
 function isInCart(adId: number) {
   return cartIds.value.has(adId)
@@ -287,9 +276,6 @@ async function saveEdit() {
   }
 }
 
-/* =========================
-   Buy
-========================= */
 function buy(ad: Ad) {
   if (ad.sold) {
     showToast("Diese Anzeige ist bereits verkauft.", "info")
@@ -415,7 +401,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Edit Modal -->
     <div v-if="isEditOpen" class="edit-backdrop" @click="closeEdit">
       <div class="edit-modal" @click.stop>
         <h2 class="edit-title">Anzeige bearbeiten</h2>
@@ -458,11 +443,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Delete Confirm Modal -->
     <div v-if="isDeleteOpen" class="confirm-backdrop" @click="closeDelete">
       <div class="confirm-modal" @click.stop>
         <h2 class="confirm-title">Anzeige löschen?</h2>
-        <p class="confirm-text">Willst du diese Anzeige wirklich löschen? Das kann nicht rückgängig gemacht werden.</p>
+        <p class="confirm-text">Möchtest du diese Anzeige wirklich löschen?<br>Dies kann nicht mehr rückgängig gemacht werden.</p>
 
         <div class="confirm-actions">
           <button class="ghost-button" type="button" @click="closeDelete" :disabled="isDeleting">Abbrechen</button>
@@ -473,7 +457,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Toast per Teleport direkt in body -->
     <teleport to="body">
       <div class="toast-host" aria-live="polite" aria-atomic="true">
         <div v-if="toastVisible" class="toast" :class="toastKind">
@@ -802,7 +785,6 @@ onBeforeUnmount(() => {
   margin-top: 4px;
 }
 
-/* Confirm Modal */
 .confirm-backdrop {
   position: fixed;
   inset: 0;
@@ -856,7 +838,6 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* Toast global (wegen Teleport) */
 .toast-host {
   position: fixed;
   right: 18px;
