@@ -4,15 +4,22 @@ import { RouterLink } from "vue-router"
 import { getUserEmail } from "@/stores/auth"
 import { addToCart, getCartItems } from "@/stores/cart"
 import KeinBild from "@/assets/KeinBild.png"
-import { listAds, updateAd, deleteAd, uploadAdImage, deleteAdImage, buildImageUrl, type Ad } from "@/services/adService"
+import {
+  listAds,
+  updateAd,
+  deleteAd,
+  uploadAdImage,
+  deleteAdImage,
+  buildImageUrl,
+  type Ad
+} from "@/services/adService"
 
 const ads = ref<Ad[]>([])
 const errorMessage = ref("")
 const isLoading = ref(false)
 
-const imageBuster = ref(0)
-
 const myEmail = computed(() => (getUserEmail() || "").trim().toLowerCase())
+
 const openMenuId = ref<number | null>(null)
 
 type ToastKind = "success" | "info" | "error"
@@ -54,7 +61,9 @@ function showToast(msg: string, kind: ToastKind = "success", durationMs = 2600) 
     toastProgress.value = Math.round(leftRatio * 100)
     toastSecondsLeft.value = leftMs / 1000
 
-    if (leftMs > 0) toastRaf = requestAnimationFrame(tick)
+    if (leftMs > 0) {
+      toastRaf = requestAnimationFrame(tick)
+    }
   }
   toastRaf = requestAnimationFrame(tick)
 
@@ -117,8 +126,12 @@ function onEditImageChange(e: Event) {
   editImageFile.value = input?.files?.[0] ?? null
 }
 
-const myAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value))
-const otherAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value))
+const myAds = computed(() =>
+  ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value)
+)
+const otherAds = computed(() =>
+  ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value)
+)
 
 const cartIds = computed(() => new Set(getCartItems().map(i => i.id)))
 function isInCart(adId: number) {
@@ -127,16 +140,7 @@ function isInCart(adId: number) {
 
 function getImageSrc(ad: Ad) {
   const url = buildImageUrl(ad.imagePath)
-  if (!url) return KeinBild
-
-  // Cache-Busting ueber Hash (wird nicht an Server geschickt)
-  const base = url.split("#")[0]
-  return `${base}#v=${imageBuster.value}`
-}
-
-function onImgError(e: Event) {
-  const img = e.target as HTMLImageElement
-  if (img && img.src !== KeinBild) img.src = KeinBild
+  return url || KeinBild
 }
 
 async function loadAds() {
@@ -144,7 +148,6 @@ async function loadAds() {
   isLoading.value = true
   try {
     ads.value = await listAds()
-    imageBuster.value++
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : "Server nicht erreichbar."
   } finally {
@@ -203,23 +206,16 @@ async function saveEdit() {
       price: editPrice.value.replace(",", ".")
     })
 
-    let imageChanged = false
-
     if (editRemoveImage.value) {
       await deleteAdImage(editId.value)
-      imageChanged = true
     }
 
     if (editImageFile.value) {
       await uploadAdImage(editId.value, editImageFile.value)
-      imageChanged = true
     }
 
     closeEdit()
     await loadAds()
-
-    if (imageChanged) imageBuster.value++
-
     showToast("Anzeige gespeichert.", "success")
   } catch (e) {
     editError.value = e instanceof Error ? e.message : "Server nicht erreichbar."
@@ -266,6 +262,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
+
 <template>
   <div class="ads-page">
     <div class="ads-inner">
@@ -296,7 +293,7 @@ onBeforeUnmount(() => {
           <div v-else class="ads-grid">
             <article v-for="ad in myAds" :key="ad.id" class="ad-card">
               <div class="img-frame">
-                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild" @error="onImgError" />
+                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild"/>
               </div>
 
               <div class="content">
@@ -324,7 +321,7 @@ onBeforeUnmount(() => {
           <div v-else class="ads-grid">
             <article v-for="ad in otherAds" :key="ad.id" class="ad-card">
               <div class="img-frame">
-                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild" @error="onImgError" />
+                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild" />
               </div>
 
               <div class="content">
