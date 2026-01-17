@@ -114,7 +114,13 @@ export async function deleteAdImage(adId: number): Promise<void> {
 export function buildImageUrl(imagePath: string | null | undefined): string {
   const p = (imagePath || "").trim()
   if (!p) return ""
+
   if (p.startsWith("http://") || p.startsWith("https://")) return p
+
+  if (p.startsWith("//")) return `https:${p}`
+
+  const base = getBackendBaseUrl()
   const path = p.startsWith("/") ? p : `/${p}`
-  return `${getBackendBaseUrl()}${path}`
+  return `${base}${path}`
 }
+
