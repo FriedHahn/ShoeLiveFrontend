@@ -13,7 +13,6 @@ const isLoading = ref(false)
 const imageBuster = ref(0)
 
 const myEmail = computed(() => (getUserEmail() || "").trim().toLowerCase())
-
 const openMenuId = ref<number | null>(null)
 
 type ToastKind = "success" | "info" | "error"
@@ -55,9 +54,7 @@ function showToast(msg: string, kind: ToastKind = "success", durationMs = 2600) 
     toastProgress.value = Math.round(leftRatio * 100)
     toastSecondsLeft.value = leftMs / 1000
 
-    if (leftMs > 0) {
-      toastRaf = requestAnimationFrame(tick)
-    }
+    if (leftMs > 0) toastRaf = requestAnimationFrame(tick)
   }
   toastRaf = requestAnimationFrame(tick)
 
@@ -132,8 +129,14 @@ function getImageSrc(ad: Ad) {
   const url = buildImageUrl(ad.imagePath)
   if (!url) return KeinBild
 
-  const sep = url.includes("?") ? "&" : "?"
-  return `${url}${sep}v=${imageBuster.value}`
+  // Cache-Busting ueber Hash (wird nicht an Server geschickt)
+  const base = url.split("#")[0]
+  return `${base}#v=${imageBuster.value}`
+}
+
+function onImgError(e: Event) {
+  const img = e.target as HTMLImageElement
+  if (img && img.src !== KeinBild) img.src = KeinBild
 }
 
 async function loadAds() {
@@ -215,9 +218,7 @@ async function saveEdit() {
     closeEdit()
     await loadAds()
 
-    if (imageChanged) {
-      imageBuster.value++
-    }
+    if (imageChanged) imageBuster.value++
 
     showToast("Anzeige gespeichert.", "success")
   } catch (e) {
@@ -295,7 +296,7 @@ onBeforeUnmount(() => {
           <div v-else class="ads-grid">
             <article v-for="ad in myAds" :key="ad.id" class="ad-card">
               <div class="img-frame">
-                <img :src="getImageSrc(ad)" class="ad-image" alt="Anzeigenbild" />
+                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild" @error="onImgError" />
               </div>
 
               <div class="content">
@@ -323,7 +324,7 @@ onBeforeUnmount(() => {
           <div v-else class="ads-grid">
             <article v-for="ad in otherAds" :key="ad.id" class="ad-card">
               <div class="img-frame">
-                <img :src="getImageSrc(ad)" class="ad-image" alt="Anzeigenbild" />
+                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild" @error="onImgError" />
               </div>
 
               <div class="content">
