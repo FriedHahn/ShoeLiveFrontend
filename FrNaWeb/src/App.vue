@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from "vue-router"
 import { watch, ref, onMounted, onBeforeUnmount } from "vue"
-import { isLoggedIn, logout as doLogout, getAuthToken } from "@/stores/auth"
+import { isLoggedIn, logout as doLogout } from "@/stores/auth"
 import { cartCount } from "@/stores/cart"
+import { fetchUnreadNotifications, markNotificationRead, type NotificationItem } from "@/services/notificationService"
 
 const router = useRouter()
 
@@ -15,47 +16,28 @@ watch(isLoggedIn, (v) => {
   if (!v) router.replace({ name: "login" })
 })
 
-type NotificationItem = {
-  id: number
-  message: string
-}
-
 const notifications = ref<NotificationItem[]>([])
 const notifOpen = ref(false)
 const isLoadingNotif = ref(false)
 let intervalId: number | null = null
 
-const backendBaseUrl = (import.meta.env.VITE_BACKEND_BASE_URL || "").replace(/\/+$/, "")
-
 async function fetchNotifications() {
-  const token = getAuthToken()
-  if (!token) return
-
   isLoadingNotif.value = true
   try {
-    const res = await fetch(`${backendBaseUrl}/api/notifications`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    if (!res.ok) return
-    notifications.value = await res.json()
+    notifications.value = await fetchUnreadNotifications()
   } catch {
+    // bewusst still: App soll nicht nerven, wenn Server down ist
   } finally {
     isLoadingNotif.value = false
   }
 }
 
 async function markRead(id: number) {
-  const token = getAuthToken()
-  if (!token) return
-
   try {
-    await fetch(`${backendBaseUrl}/api/notifications/${id}/read`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    await markNotificationRead(id)
   } catch {
+    // bewusst still
   }
-
   await fetchNotifications()
 }
 

@@ -2,29 +2,31 @@
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { login as setLoginState } from "@/stores/auth"
+import { registerRequest } from "@/services/authService"
 
 const router = useRouter()
 const email = ref("")
 const password = ref("")
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 const errorMessage = ref("")
+const isLoading = ref(false)
 
 async function register() {
   errorMessage.value = ""
+  isLoading.value = true
 
-  const res = await fetch(`${backendBaseUrl}/api/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email.value, password: password.value })
-  })
+  try {
+    const result = await registerRequest(email.value, password.value)
 
-  const data = await res.json()
-
-  if (res.ok && data.success) {
-    setLoginState(data.token, email.value)
-    router.push({ name: "home" })
-  } else {
-    errorMessage.value = data.message || "Registrierung fehlgeschlagen"
+    if (result.success && result.token) {
+      setLoginState(result.token, email.value)
+      router.push({ name: "home" })
+    } else {
+      errorMessage.value = result.message || "Registrierung fehlgeschlagen"
+    }
+  } catch {
+    errorMessage.value = "Server nicht erreichbar."
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
@@ -66,11 +68,11 @@ async function register() {
             {{ errorMessage }}
           </p>
 
-          <button class="login-button" @click="register">
-            Registrieren
+          <button class="login-button" @click="register" :disabled="isLoading">
+            {{ isLoading ? "Lade..." : "Registrieren" }}
           </button>
 
-          <button class="back-button" @click="router.push({ name: 'login' })">
+          <button class="back-button" @click="router.push({ name: 'login' })" :disabled="isLoading">
             Zurück zum Login
           </button>
         </div>
@@ -80,7 +82,6 @@ async function register() {
 </template>
 
 <style scoped>
-
 .login-page {
   min-height: 100vh;
   padding: 40px;

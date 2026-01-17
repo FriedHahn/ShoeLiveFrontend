@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { mount } from "@vue/test-utils"
 import type { Router } from "vue-router"
+import { nextTick } from "vue"
 
 function flushPromises() {
   return new Promise<void>((resolve) => queueMicrotask(resolve))
@@ -304,6 +305,7 @@ describe("Frontend: Tests für alle sinnvollen Methoden/Flows", () => {
         }
         return new Response(null, { status: 404 })
       })
+
     ;(globalThis as unknown as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch
 
     const router = (await import("@/router")).default as Router
@@ -321,9 +323,11 @@ describe("Frontend: Tests für alle sinnvollen Methoden/Flows", () => {
 
     await wrapper.find("button.login-button").trigger("click")
     await flushPromises()
+    await nextTick()
+
+    await waitUntil(() => wrapper.find("p.login-error").exists(), 60)
 
     const err = wrapper.find("p.login-error")
-    expect(err.exists()).toBe(true)
     expect(err.text()).toContain("Falsche Daten")
   })
 

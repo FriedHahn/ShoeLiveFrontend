@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import { getAuthToken } from "@/stores/auth"
+import { fetchProfile } from "@/services/profileService"
+import { buildImageUrl } from "@/services/adService"
+import KeinBild from "@/assets/KeinBild.png"
 
 type Ad = {
   id: number
@@ -11,8 +13,6 @@ type Ad = {
   buyerEmail?: string | null
   imagePath?: string | null
 }
-
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 
 const email = ref("")
 const totalAds = ref(0)
@@ -29,34 +29,23 @@ const boughtAds = ref<Ad[]>([])
 const errorMessage = ref("")
 const isLoading = ref(false)
 
-function money(v: any) {
+function money(v: unknown) {
   const n = Number(v)
   if (Number.isNaN(n)) return "0.00"
   return n.toFixed(2)
+}
+
+function getImageSrc(imagePath?: string | null) {
+  const url = buildImageUrl(imagePath)
+  return url || KeinBild
 }
 
 async function loadProfile() {
   errorMessage.value = ""
   isLoading.value = true
 
-  const token = getAuthToken()
-  if (!token) {
-    errorMessage.value = "Nicht eingeloggt."
-    isLoading.value = false
-    return
-  }
-
   try {
-    const res = await fetch(`${backendBaseUrl}/api/profile`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-
-    if (!res.ok) {
-      errorMessage.value = "Profil konnte nicht geladen werden."
-      return
-    }
-
-    const data = await res.json()
+    const data = await fetchProfile()
 
     email.value = data.email || ""
     totalAds.value = data.totalAds || 0
@@ -70,7 +59,14 @@ async function loadProfile() {
     soldAds.value = data.soldAds || []
     boughtAds.value = data.boughtAds || []
   } catch (e) {
-    errorMessage.value = "Server nicht erreichbar."
+    const msg = e instanceof Error ? e.message : ""
+    if (msg === "Nicht eingeloggt") {
+      errorMessage.value = "Nicht eingeloggt."
+    } else if (msg === "Profil konnte nicht geladen werden") {
+      errorMessage.value = "Profil konnte nicht geladen werden."
+    } else {
+      errorMessage.value = "Server nicht erreichbar."
+    }
   } finally {
     isLoading.value = false
   }
@@ -121,7 +117,7 @@ onMounted(loadProfile)
 
         <div v-else class="list">
           <article v-for="a in soldAds" :key="a.id" class="item">
-            <img v-if="a.imagePath" :src="backendBaseUrl + a.imagePath" class="img" alt="Bild" />
+            <img :src="getImageSrc(a.imagePath)" class="img" alt="Bild" />
             <div class="meta">
               <p class="title">{{ a.brand }}</p>
               <p class="small">Größe {{ a.size }} · {{ a.price }} €</p>
@@ -136,7 +132,7 @@ onMounted(loadProfile)
 
         <div v-else class="list">
           <article v-for="a in boughtAds" :key="a.id" class="item">
-            <img v-if="a.imagePath" :src="backendBaseUrl + a.imagePath" class="img" alt="Bild" />
+            <img :src="getImageSrc(a.imagePath)" class="img" alt="Bild" />
             <div class="meta">
               <p class="title">{{ a.brand }}</p>
               <p class="small">Größe {{ a.size }} · {{ a.price }} €</p>
@@ -144,7 +140,6 @@ onMounted(loadProfile)
           </article>
         </div>
       </section>
-
     </div>
   </div>
 </template>

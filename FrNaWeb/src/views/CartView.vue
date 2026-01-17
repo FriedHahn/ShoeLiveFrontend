@@ -2,26 +2,26 @@
 import { computed, ref } from "vue"
 import { useRouter } from "vue-router"
 import { getCartItems, removeFromCart, clearCart } from "@/stores/cart"
-import { getAuthToken } from "@/stores/auth"
 import KeinBild from "@/assets/KeinBild.png"
+import { checkoutPurchase } from "@/services/purchaseService"
+import { buildImageUrl } from "@/services/adService"
 
 const router = useRouter()
 const confirmBuy = ref(false)
 const errorMessage = ref("")
 const isBuying = ref(false)
 
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-
 const items = computed(() => getCartItems())
 const total = computed(() => items.value.reduce((sum, x) => sum + Number(x.price || 0), 0))
 
 function getImageSrc(imagePath?: string | null) {
-  if (imagePath && imagePath.trim()) return backendBaseUrl + imagePath
-  return KeinBild
+  const url = buildImageUrl(imagePath)
+  return url || KeinBild
 }
 
 async function checkout() {
   errorMessage.value = ""
+
   if (!confirmBuy.value) {
     errorMessage.value = "Bitte zuerst bestätigen."
     return
@@ -31,33 +31,13 @@ async function checkout() {
     return
   }
 
-  const token = getAuthToken()
-  if (!token) {
-    errorMessage.value = "Nicht eingeloggt."
-    return
-  }
-
   isBuying.value = true
   try {
-    const res = await fetch(`${backendBaseUrl}/api/purchases/checkout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ adIds: items.value.map(i => i.id) })
-    })
-
-    if (!res.ok) {
-      const msg = await res.text()
-      errorMessage.value = msg || "Kauf fehlgeschlagen."
-      return
-    }
-
+    await checkoutPurchase(items.value.map(i => i.id))
     clearCart()
     router.push({ name: "ads" })
-  } catch {
-    errorMessage.value = "Server nicht erreichbar."
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : "Server nicht erreichbar."
   } finally {
     isBuying.value = false
   }

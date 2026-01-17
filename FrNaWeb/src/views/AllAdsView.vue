@@ -1,26 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from "vue"
 import { RouterLink } from "vue-router"
-import { getAuthToken, getUserEmail } from "@/stores/auth"
+import { getUserEmail } from "@/stores/auth"
 import { addToCart, getCartItems } from "@/stores/cart"
 import KeinBild from "@/assets/KeinBild.png"
-
-type Ad = {
-  id: number
-  brand: string
-  size: string
-  price: string
-  ownerEmail: string
-  imagePath?: string | null
-  sold?: boolean
-  buyerEmail?: string | null
-}
+import { listAds, updateAd, deleteAd, uploadAdImage, deleteAdImage, buildImageUrl, type Ad } from "@/services/adService"
 
 const ads = ref<Ad[]>([])
 const errorMessage = ref("")
 const isLoading = ref(false)
 
-const backendBaseUrl = (import.meta.env.VITE_BACKEND_BASE_URL || "").replace(/\/+$/, "")
 const myEmail = computed(() => (getUserEmail() || "").trim().toLowerCase())
 
 const openMenuId = ref<number | null>(null)
@@ -100,30 +89,14 @@ function closeDelete() {
 async function confirmDelete() {
   if (!deleteTarget.value) return
 
-  const token = getAuthToken()
-  if (!token) {
-    showToast("Nicht eingeloggt.", "error")
-    return
-  }
-
   isDeleting.value = true
   try {
-    const res = await fetch(`${backendBaseUrl}/api/ads/${deleteTarget.value.id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
-    })
-
-    if (!res.ok && res.status !== 204) {
-      const msg = await res.text()
-      showToast(msg || "Löschen fehlgeschlagen.", "error")
-      return
-    }
-
+    await deleteAd(deleteTarget.value.id)
     showToast("Anzeige gelöscht.", "success")
     closeDelete()
     await loadAds()
-  } catch {
-    showToast("Server nicht erreichbar.", "error")
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : "Server nicht erreichbar.", "error")
   } finally {
     isDeleting.value = false
   }
@@ -154,33 +127,17 @@ function isInCart(adId: number) {
 }
 
 function getImageSrc(ad: Ad) {
-  const p = (ad.imagePath || "").trim()
-  if (!p) return KeinBild
-
-  if (p.startsWith("http://") || p.startsWith("https://")) return p
-
-  const path = p.startsWith("/") ? p : `/${p}`
-  return `${backendBaseUrl}${path}`
+  const url = buildImageUrl(ad.imagePath)
+  return url || KeinBild
 }
 
 async function loadAds() {
   errorMessage.value = ""
   isLoading.value = true
   try {
-    const res = await fetch(`${backendBaseUrl}/api/ads`, {
-      method: "GET",
-      headers: { Accept: "application/json" }
-    })
-
-    if (!res.ok) {
-      errorMessage.value = `Anzeigen konnten nicht geladen werden (Status ${res.status}).`
-      return
-    }
-
-    const data = await res.json()
-    ads.value = Array.isArray(data) ? data : (data ? [data] : [])
-  } catch {
-    errorMessage.value = "Server nicht erreichbar."
+    ads.value = await listAds()
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : "Server nicht erreichbar."
   } finally {
     isLoading.value = false
   }
@@ -218,7 +175,7 @@ function isEditValid() {
   if (!editBrand.value.trim()) return false
   if (editSize.value === null || Number.isNaN(editSize.value) || editSize.value <= 0) return false
   const p = editPrice.value.replace(",", ".")
-  if (!p || isNaN(Number(p)) || Number(p) < 0) return false
+  if (!p || Number.isNaN(Number(p)) || Number(p) < 0) return false
   return true
 }
 
@@ -229,56 +186,27 @@ async function saveEdit() {
     return
   }
 
-  const token = getAuthToken()
-  if (!token) {
-    editError.value = "Nicht eingeloggt."
-    return
-  }
-
   isSavingEdit.value = true
   try {
-    const res = await fetch(`${backendBaseUrl}/api/ads/${editId.value}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        brand: editBrand.value,
-        size: String(editSize.value),
-        price: editPrice.value.replace(",", ".")
-      })
+    await updateAd(editId.value, {
+      brand: editBrand.value,
+      size: String(editSize.value),
+      price: editPrice.value.replace(",", ".")
     })
 
-    if (!res.ok) {
-      const msg = await res.text()
-      editError.value = msg || "Speichern fehlgeschlagen."
-      return
-    }
-
     if (editRemoveImage.value) {
-      await fetch(`${backendBaseUrl}/api/ads/${editId.value}/image`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await deleteAdImage(editId.value)
     }
 
     if (editImageFile.value) {
-      const formData = new FormData()
-      formData.append("file", editImageFile.value)
-
-      await fetch(`${backendBaseUrl}/api/ads/${editId.value}/image`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData
-      })
+      await uploadAdImage(editId.value, editImageFile.value)
     }
 
     closeEdit()
     await loadAds()
     showToast("Anzeige gespeichert.", "success")
-  } catch {
-    editError.value = "Server nicht erreichbar."
+  } catch (e) {
+    editError.value = e instanceof Error ? e.message : "Server nicht erreichbar."
   } finally {
     isSavingEdit.value = false
   }

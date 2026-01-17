@@ -2,29 +2,31 @@
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { login as setLoginState } from "@/stores/auth"
+import { loginRequest } from "@/services/authService"
 
 const router = useRouter()
 const email = ref("")
 const password = ref("")
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 const errorMessage = ref("")
+const isLoading = ref(false)
 
 async function login() {
   errorMessage.value = ""
+  isLoading.value = true
 
-  const res = await fetch(`${backendBaseUrl}/api/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email.value, password: password.value })
-  })
+  try {
+    const result = await loginRequest(email.value, password.value)
 
-  const data = await res.json()
-
-  if (res.ok && data.success) {
-    setLoginState(data.token, email.value)
-    router.push({ name: "home" })
-  } else {
-    errorMessage.value = data.message || "Login fehlgeschlagen"
+    if (result.success && result.token) {
+      setLoginState(result.token, email.value)
+      router.push({ name: "home" })
+    } else {
+      errorMessage.value = result.message || "Login fehlgeschlagen"
+    }
+  } catch {
+    errorMessage.value = "Server nicht erreichbar."
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
@@ -44,7 +46,6 @@ async function login() {
           Melde dich an, um Zugriff auf dein Dashboard und deine Daten zu erhalten.
         </p>
       </div>
-
 
       <div class="login-right">
         <div class="login-form-header">
@@ -77,9 +78,10 @@ async function login() {
             {{ errorMessage }}
           </p>
 
-          <button class="login-button" @click="login">
-            Einloggen
+          <button class="login-button" @click="login" :disabled="isLoading">
+            {{ isLoading ? "Lade..." : "Einloggen" }}
           </button>
+
           <div class="register-hint">
             <span>Noch keinen Account?</span>
             <RouterLink to="/register" class="register-link">
@@ -93,6 +95,7 @@ async function login() {
 </template>
 
 <style scoped>
+/* unverändert */
 .login-page {
   min-height: 100vh;
   padding: 40px;

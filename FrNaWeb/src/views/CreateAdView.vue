@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { useRouter } from "vue-router"
-import { getAuthToken } from "@/stores/auth"
+import { createAd, uploadAdImage } from "@/services/adService"
 
 const brand = ref("")
 const size = ref<number | null>(null)
@@ -12,7 +12,6 @@ const imageFile = ref<File | null>(null)
 const errorMessage = ref("")
 const isSaving = ref(false)
 
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 const router = useRouter()
 
 function onImageChange(e: Event) {
@@ -30,7 +29,7 @@ function isValid() {
 
   const p = normalizedPrice()
   if (!p) return false
-  if (isNaN(Number(p)) || Number(p) < 0) return false
+  if (Number.isNaN(Number(p)) || Number(p) < 0) return false
 
   return true
 }
@@ -43,56 +42,21 @@ async function addItem() {
     return
   }
 
-  const token = getAuthToken()
-  if (!token) {
-    errorMessage.value = "Nicht eingeloggt."
-    return
-  }
-
   isSaving.value = true
   try {
-    const res = await fetch(`${backendBaseUrl}/api/ads`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        brand: brand.value,
-        size: String(size.value),
-        price: normalizedPrice()
-      })
+    const createdAd = await createAd({
+      brand: brand.value,
+      size: String(size.value),
+      price: normalizedPrice()
     })
 
-    if (!res.ok) {
-      const msg = await res.text()
-      errorMessage.value = msg || "Speichern fehlgeschlagen."
-      return
-    }
-
-    const createdAd = await res.json()
-
     if (imageFile.value) {
-      const formData = new FormData()
-      formData.append("file", imageFile.value)
-
-      const up = await fetch(`${backendBaseUrl}/api/ads/${createdAd.id}/image`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: formData
-      })
-
-      if (!up.ok) {
-        const msg = await up.text()
-        errorMessage.value = msg || "Bild Upload fehlgeschlagen."
-      }
+      await uploadAdImage(createdAd.id, imageFile.value)
     }
 
     router.push({ name: "ads" })
-  } catch {
-    errorMessage.value = "Server nicht erreichbar."
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : "Server nicht erreichbar."
   } finally {
     isSaving.value = false
   }
