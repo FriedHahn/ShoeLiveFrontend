@@ -4,15 +4,7 @@ import { RouterLink } from "vue-router"
 import { getUserEmail } from "@/stores/auth"
 import { addToCart, getCartItems } from "@/stores/cart"
 import KeinBild from "@/assets/KeinBild.png"
-import {
-  listAds,
-  updateAd,
-  deleteAd,
-  uploadAdImage,
-  deleteAdImage,
-  buildImageUrl,
-  type Ad
-} from "@/services/adService"
+import { listAds, updateAd, deleteAd, uploadAdImage, deleteAdImage, buildImageUrl, type Ad } from "@/services/adService"
 
 const ads = ref<Ad[]>([])
 const errorMessage = ref("")
@@ -126,12 +118,8 @@ function onEditImageChange(e: Event) {
   editImageFile.value = input?.files?.[0] ?? null
 }
 
-const myAds = computed(() =>
-  ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value)
-)
-const otherAds = computed(() =>
-  ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value)
-)
+const myAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() === myEmail.value))
+const otherAds = computed(() => ads.value.filter(a => (a.ownerEmail || "").trim().toLowerCase() !== myEmail.value))
 
 const cartIds = computed(() => new Set(getCartItems().map(i => i.id)))
 function isInCart(adId: number) {
@@ -262,7 +250,6 @@ onBeforeUnmount(() => {
 })
 </script>
 
-
 <template>
   <div class="ads-page">
     <div class="ads-inner">
@@ -293,7 +280,7 @@ onBeforeUnmount(() => {
           <div v-else class="ads-grid">
             <article v-for="ad in myAds" :key="ad.id" class="ad-card">
               <div class="img-frame">
-                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild"/>
+                <img :src="getImageSrc(ad)" class="ad-image" alt="Anzeigenbild" />
               </div>
 
               <div class="content">
@@ -321,7 +308,7 @@ onBeforeUnmount(() => {
           <div v-else class="ads-grid">
             <article v-for="ad in otherAds" :key="ad.id" class="ad-card">
               <div class="img-frame">
-                <img :src="getImageSrc(ad)" class="img" alt="Anzeigenbild" />
+                <img :src="getImageSrc(ad)" class="ad-image" alt="Anzeigenbild" />
               </div>
 
               <div class="content">
