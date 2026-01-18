@@ -65,9 +65,9 @@ async function checkout() {
 
             <div class="info">
               <h3 class="title">{{ it.brand }}</h3>
-              <p class="line"><span>Groesse:</span> {{ it.size }}</p>
+              <p class="line"><span>Größe:</span> {{ it.size }}</p>
               <p class="line"><span>Preis:</span> {{ it.price }} €</p>
-              <p class="small"><span>Verkaeufer:</span> {{ it.ownerEmail }}</p>
+              <p class="small"><span>Verkäufer:</span> {{ it.ownerEmail }}</p>
             </div>
 
             <div class="right">

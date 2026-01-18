@@ -240,9 +240,9 @@ describe("Frontend: Tests für alle sinnvollen Methoden/Flows", () => {
 
     expect(wrapper.find(".popup").exists()).toBe(true)
 
-    const firstBtn = wrapper.find(".notif-btn")
-    expect(firstBtn.exists()).toBe(true)
-    await firstBtn.trigger("click")
+    const readBtn = wrapper.find(".popup .notif-row .notif-btn")
+    expect(readBtn.exists()).toBe(true)
+    await readBtn.trigger("click")
     await flushPromises()
 
     await waitUntil(() => wrapper.find(".popup").exists(), 10)

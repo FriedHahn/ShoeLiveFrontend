@@ -124,7 +124,6 @@ function onEditImageChange(e: Event) {
   editImageFile.value = input?.files?.[0] ?? null
 }
 
-// ersetzt ein Ad im Array, damit Vue garantiert neu rendert
 function replaceAd(updated: Ad) {
   const idx = ads.value.findIndex(a => a.id === updated.id)
   if (idx !== -1) ads.value.splice(idx, 1, updated)
@@ -141,7 +140,6 @@ function isInCart(adId: number) {
 function getImageSrc(ad: Ad) {
   const url = buildImageUrl(ad.imagePath)
   const base = url || KeinBild
-  // wichtig: cache-buster, damit nach delete+upload in einer session das neue bild sofort kommt
   return base ? `${base}${base.includes("?") ? "&" : "?"}v=${imageBuster.value}` : base
 }
 
@@ -209,14 +207,12 @@ async function saveEdit() {
       price: editPrice.value.replace(",", ".")
     })
 
-    // Wenn Bild entfernt wird, aktualisiere das Ad-Objekt direkt
     if (editRemoveImage.value) {
       const updated = await deleteAdImage(editId.value)
       replaceAd(updated)
       bumpImageBuster()
     }
 
-    // Wenn neues Bild hochgeladen wird, aktualisiere das Ad-Objekt direkt
     if (editImageFile.value) {
       const updated = await uploadAdImage(editId.value, editImageFile.value)
       replaceAd(updated)

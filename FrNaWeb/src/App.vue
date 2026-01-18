@@ -22,11 +22,11 @@ const isLoadingNotif = ref(false)
 let intervalId: number | null = null
 
 async function fetchNotifications() {
+  if (!isLoggedIn.value) return
   isLoadingNotif.value = true
   try {
     notifications.value = await fetchUnreadNotifications()
   } catch {
-    // bewusst still: App soll nicht nerven, wenn Server down ist
   } finally {
     isLoadingNotif.value = false
   }
@@ -36,7 +36,6 @@ async function markRead(id: number) {
   try {
     await markNotificationRead(id)
   } catch {
-    // bewusst still
   }
   await fetchNotifications()
 }
@@ -49,14 +48,39 @@ function onWindowClick() {
   notifOpen.value = false
 }
 
-onMounted(() => {
-  fetchNotifications()
+function startNotifInterval() {
+  if (intervalId !== null) return
   intervalId = window.setInterval(fetchNotifications, 8000)
+}
+
+function stopNotifInterval() {
+  if (intervalId !== null) {
+    window.clearInterval(intervalId)
+    intervalId = null
+  }
+}
+
+watch(isLoggedIn, (v) => {
+  if (v) {
+    fetchNotifications()
+    startNotifInterval()
+  } else {
+    notifOpen.value = false
+    notifications.value = []
+    stopNotifInterval()
+  }
+})
+
+onMounted(() => {
+  if (isLoggedIn.value) {
+    fetchNotifications()
+    startNotifInterval()
+  }
   window.addEventListener("click", onWindowClick)
 })
 
 onBeforeUnmount(() => {
-  if (intervalId) window.clearInterval(intervalId)
+  stopNotifInterval()
   window.removeEventListener("click", onWindowClick)
 })
 </script>
@@ -82,7 +106,13 @@ onBeforeUnmount(() => {
           <span v-if="cartCount > 0" class="badge">{{ cartCount }}</span>
         </RouterLink>
 
-        <button class="icon-btn" type="button" title="Benachrichtigungen" aria-label="Benachrichtigungen" @click.stop="toggleNotif">
+        <button
+          class="icon-btn notif-btn"
+          type="button"
+          title="Benachrichtigungen"
+          aria-label="Benachrichtigungen"
+          @click.stop="toggleNotif"
+        >
           🔔
           <span v-if="notifications.length > 0" class="badge">{{ notifications.length }}</span>
 
